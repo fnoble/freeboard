@@ -33,8 +33,8 @@
       $.when(
         $.get("https://api.github.com/repos/" + path + auth),
         $.get("https://api.github.com/repos/" + path + "/pulls" + auth),
-        $.get("https://api.travis-ci.org/repos/" + path + "/branches/" + currentSettings.branch),
-        $.get("http://cors.io/?u=https://coveralls.io/github/" + path + ".json?branch=" + currentSettings.branch)
+        currentSettings.use_travis ? $.get("https://api.travis-ci.org/repos/" + path + "/branches/" + currentSettings.branch) : null,
+        currentSettings.use_coveralls ? $.get("http://cors.io/?u=https://coveralls.io/github/" + path + ".json?branch=" + currentSettings.branch) : null
       ).then(function(github, github_pr, travis, coveralls) {
 
         var data = {};
@@ -42,11 +42,15 @@
         data["pull_requests"] = github_pr[0];
         data["num_open_issues"] = github[0]['open_issues_count'];
         data["github_repo"] = github[0];
-        data["build_status"] = travis[0]['branch']['state'];
-        data["travis"] = travis[0];
-        data["coveralls"] = JSON.parse(coveralls[0]);
-        var cc = data["coveralls"]["covered_percent"];
-        data["code_coverage"] = Number(Math.round(cc+'e2')+'e-2');
+        if (travis) {
+          data["build_status"] = travis[0]['branch']['state'];
+          data["travis"] = travis[0];
+        }
+        if (coveralls) {
+          data["coveralls"] = JSON.parse(coveralls[0]);
+          var cc = data["coveralls"]["covered_percent"];
+          data["code_coverage"] = Number(Math.round(cc+'e2')+'e-2');
+        }
         console.log(data);
 				updateCallback(data);
 
